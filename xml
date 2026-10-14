@@ -1,0 +1,56 @@
+recipes.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="recipes.xsl"?>
+<recipes>
+    <recipe id="R101">
+        <name>Vegetable Sandwich</name>
+        <ingredients>
+            <ingredient>Bread</ingredient>
+            <ingredient>Tomato</ingredient>
+            <ingredient>Cucumber</ingredient>
+        </ingredients>
+        <preparation>Mix vegetables and place between bread slices.</preparation>
+        <time>10 minutes</time>
+    </recipe>
+
+    <recipe id="R102">
+        <name>Lemon Rice</name>
+        <ingredients>
+            <ingredient>Rice</ingredient>
+            <ingredient>Lemon</ingredient>
+            <ingredient>Salt</ingredient>
+        </ingredients>
+        <preparation>Mix cooked rice with lemon juice and seasoning.</preparation>
+        <time>15 minutes</time>
+    </recipe>
+</recipes>
+
+recipes.xsl
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:output method="html" indent="yes"/>
+<xsl:template match="/">
+<html>
+<body>
+<h2>Recipe List</h2>
+
+<xsl:for-each select="recipes/recipe">
+    <h3><xsl:value-of select="name"/></h3>
+    <p>ID: <xsl:value-of select="@id"/></p>
+    <p>Ingredients:</p>
+    <ul>
+        <xsl:for-each select="ingredients/ingredient">
+            <li><xsl:value-of select="."/></li>
+        </xsl:for-each>
+    </ul>
+    <p>Preparation: <xsl:value-of select="preparation"/></p>
+    <p>Time: <xsl:value-of select="time"/></p>
+    <hr/>
+</xsl:for-each>
+
+</body>
+</html>
+</xsl:template>
+</xsl:stylesheet>
