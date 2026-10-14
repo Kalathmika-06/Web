@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html ng-app="studentApp">
+
+<head>
+    <title>Add Student</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body ng-controller="studentController">
+
+    <h2>Add Student</h2>
+
+    <input type="number"
+           placeholder="Student ID"
+           ng-model="student.studentId">
+
+    <br><br>
+
+    <input type="text"
+           placeholder="Student Name"
+           ng-model="student.name">
+
+    <br><br>
+
+    <input type="text"
+           placeholder="Department"
+           ng-model="student.department">
+
+    <br><br>
+
+    <button ng-click="save()">
+        Save
+    </button>
+
+    <p>{{message}}</p>
+
+    <a href="index.html">
+        <button>Home</button>
+    </a>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+    <script>
+
+        var app = angular.module("studentApp", []);
+
+        app.controller("studentController",
+        function($scope, $http){
+
+            $scope.save = function(){
+
+                $http.post(
+                    "http://localhost:3000/students",
+                    $scope.student
+                )
+
+                .then(function(response){
+
+                    $scope.message =
+                    response.data;
+
+                });
+
+            };
+
+        });
+
+    </script>
+
+</body>
+</html>
