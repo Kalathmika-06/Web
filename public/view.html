@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html ng-app="studentApp">
+
+<head>
+    <title>View Students</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body ng-controller="studentController">
+
+    <h2>Student List</h2>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Action</th>
+        </tr>
+        <tr ng-repeat="s in students">
+            <td>{{s.studentId}}</td>
+            <td>{{s.name}}</td>
+            <td>{{s.department}}</td>
+            <td>
+                <button ng-click="deleteStudent(s.studentId)">
+                    Delete
+                </button>
+            </td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <a href="index.html">
+        <button>Home</button>
+    </a>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script>
+        var app = angular.module("studentApp", []);
+        app.controller("studentController",
+        function($scope, $http){
+            loadStudents();
+            function loadStudents(){
+                $http.get(
+                    "http://localhost:3000/students"
+                )
+                .then(function(response){
+                    $scope.students =
+                    response.data;
+                });
+            }
+            $scope.deleteStudent =
+            function(id){
+                $http.delete(
+                    "http://localhost:3000/students/" + id
+                )
+                .then(function(){
+                    loadStudents();
+                });
+            };
+        });
+    </script>
+</body>
+</html>
