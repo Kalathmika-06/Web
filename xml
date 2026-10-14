@@ -55,6 +55,42 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 </xsl:template>
 </xsl:stylesheet>
 
+python -m http.server 8000
+http://localhost:8000/recipes.xml
+
+students.xml
+<?xml version="1.0"?>
+<!DOCTYPE students SYSTEM "students.dtd">
+
+<students>
+    <student>
+        <id>101</id>
+        <name>Arun</name>
+        <department>CSE</department>
+    </student>
+    <student>
+        <id>102</id>
+        <name>Priya</name>
+        <department>IT</department>
+    </student>
+</students>
+
+validation.py
+from lxml import etree
+try:
+    parser = etree.XMLParser(dtd_validation=True)
+    tree = etree.parse("students.xml", parser)
+
+    print("XML is valid!")
+    print(etree.tostring(tree, pretty_print=True).decode())
+
+except etree.XMLSyntaxError as e:
+    print("XML validation failed!")
+    print(e)
+
+py -m pip install lxml
+python validate.py
+
 Manual testing
 <!DOCTYPE html>
 <html>
