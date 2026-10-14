@@ -54,3 +54,46 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 </html>
 </xsl:template>
 </xsl:stylesheet>
+
+Manual testing
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Login</title>
+</head>
+<body>
+    <h2>Student Login Form</h2>
+
+    <form onsubmit="return login()">
+        Username:
+        <input type="text" id="username" required>
+        <br><br>
+
+        Password:
+        <input type="password" id="password" required>
+        <br><br>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+        function login() {
+            var u = document.getElementById("username").value;
+            var p = document.getElementById("password").value;
+
+            if (u == "student" && p == "1234") {
+                document.getElementById("result").innerHTML =
+                    "Login Successful!";
+            } else {
+                document.getElementById("result").innerHTML =
+                    "Invalid Username or Password!";
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
+Username: student passwors:1234
+
