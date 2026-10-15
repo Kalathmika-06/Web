@@ -1,0 +1,624 @@
+server.js
+
+```javascript
+const express = require("express");
+const { MongoClient } = require("mongodb");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static("public"));
+
+const url = "mongodb://localhost:27017";
+const client = new MongoClient(url);
+
+// Add Student - CREATE
+app.post("/students", async (req, res) => {
+    try {
+        await client.connect();
+
+        const db = client.db("StudentDB");
+        const collection = db.collection("students");
+
+        const existing = await collection.findOne({
+            studentId: Number(req.body.studentId)
+        });
+
+        if (existing) {
+            return res.status(400).send("Student ID already exists");
+        }
+
+        await collection.insertOne({
+            studentId: Number(req.body.studentId),
+            name: req.body.name,
+            department: req.body.department
+        });
+
+        res.send("Student Added Successfully");
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error Adding Student");
+    }
+});
+
+// View Students - READ
+app.get("/students", async (req, res) => {
+    try {
+        await client.connect();
+
+        const db = client.db("StudentDB");
+        const collection = db.collection("students");
+
+        const data = await collection.find().toArray();
+
+        res.json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error Fetching Students");
+    }
+});
+
+// Update Student - UPDATE
+app.put("/students/:id", async (req, res) => {
+    try {
+        await client.connect();
+
+        const db = client.db("StudentDB");
+        const collection = db.collection("students");
+
+        const result = await collection.updateOne(
+            { studentId: Number(req.params.id) },
+            {
+                $set: {
+                    name: req.body.name,
+                    department: req.body.department
+                }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).send("Student Not Found");
+        }
+
+        res.send("Student Updated Successfully");
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error Updating Student");
+    }
+});
+
+// Delete Student - DELETE
+app.delete("/students/:id", async (req, res) => {
+    try {
+        await client.connect();
+
+        const db = client.db("StudentDB");
+        const collection = db.collection("students");
+
+        const result = await collection.deleteOne({
+            studentId: Number(req.params.id)
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).send("Student Not Found");
+        }
+
+        res.send("Student Deleted Successfully");
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error Deleting Student");
+    }
+});
+
+app.listen(3000, () => {
+    console.log("Server Running on Port 3000");
+});
+
+index.html
+
+<!DOCTYPE html>
+<html ng-app="studentApp">
+
+<head>
+    <title>Student Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h2>Student Management System</h2>
+    <p>Manage student records easily</p>
+
+    <a href="add.html">
+        <button>Add Student</button>
+    </a>
+
+    <a href="view.html">
+        <button>View Students</button>
+    </a>
+
+</body>
+</html>
+
+add.html
+
+<!DOCTYPE html>
+<html ng-app="studentApp">
+
+<head>
+    <title>Add Student</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body ng-controller="studentController">
+
+    <h2>Add Student</h2>
+
+    <input type="number"
+           placeholder="Student ID"
+           ng-model="student.studentId">
+
+    <br><br>
+
+    <input type="text"
+           placeholder="Student Name"
+           ng-model="student.name">
+
+    <br><br>
+
+    <input type="text"
+           placeholder="Department"
+           ng-model="student.department">
+
+    <br><br>
+
+    <button ng-click="save()">
+        Save
+    </button>
+
+    <p>{{message}}</p>
+
+    <a href="index.html">
+        <button>Home</button>
+    </a>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+    <script>
+
+        var app = angular.module("studentApp", []);
+
+        app.controller("studentController",
+        function($scope, $http){
+
+            $scope.save = function(){
+
+                $http.post(
+                    "http://localhost:3000/students",
+                    $scope.student
+                )
+
+                .then(function(response){
+
+                    $scope.message =
+                    response.data;
+
+                });
+
+            };
+
+        });
+
+    </script>
+
+</body>
+</html>
+
+view.html
+
+<!DOCTYPE html>
+<html ng-app="studentApp">
+
+<head>
+    <title>View Students</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body ng-controller="studentController">
+
+    <h2>Student List</h2>
+
+    <!-- Custom Directive -->
+    <p student-module></p>
+
+    <!-- Custom Filter Search -->
+    <input type="text"
+           ng-model="searchName"
+           placeholder="Search by student name">
+
+    <!-- Update Form -->
+    <div ng-if="editing">
+
+        <h3>Edit Student</h3>
+
+        <input type="text"
+               ng-model="editData.name"
+               placeholder="Student Name"
+               required>
+
+        <br><br>
+
+        <input type="text"
+               ng-model="editData.department"
+               placeholder="Department"
+               required>
+
+        <br><br>
+
+        <button ng-click="updateStudent()">
+            Update Student
+        </button>
+
+        <button ng-click="editing = false">
+            Cancel
+        </button>
+
+    </div>
+
+    <!-- Student Table -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Action</th>
+        </tr>
+
+        <tr ng-repeat="s in students | studentFilter:searchName">
+            <td>{{s.studentId}}</td>
+            <td>{{s.name}}</td>
+            <td>{{s.department}}</td>
+
+            <td>
+                <button ng-click="editStudent(s)">
+                    Edit
+                </button>
+
+                <button ng-click="deleteStudent(s.studentId)">
+                    Delete
+                </button>
+            </td>
+        </tr>
+
+        <tr ng-if="students.length === 0">
+            <td colspan="4">No students found</td>
+        </tr>
+    </table>
+
+    <p>{{message}}</p>
+
+    <a href="index.html">
+        <button>Home</button>
+    </a>
+
+    <a href="add.html">
+        <button>Add Student</button>
+    </a>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+    <script>
+        var app = angular.module("studentApp", []);
+
+        // Controller
+        app.controller("studentController",
+        function($scope, $http) {
+
+            $scope.students = [];
+            $scope.editing = false;
+
+            // Read Students
+            function loadStudents() {
+                $http.get("/students")
+                .then(function(response) {
+                    $scope.students = response.data;
+                })
+                .catch(function(error) {
+                    $scope.message = "Error loading students";
+                    console.log(error);
+                });
+            }
+
+            loadStudents();
+
+            // Select Student for Editing
+            $scope.editStudent = function(s) {
+                $scope.editData = angular.copy(s);
+                $scope.editing = true;
+                $scope.message = "";
+            };
+
+            // Update Student
+            $scope.updateStudent = function() {
+
+                $http.put(
+                    "/students/" + $scope.editData.studentId,
+                    $scope.editData
+                )
+                .then(function(response) {
+                    $scope.message = response.data;
+                    $scope.editing = false;
+                    loadStudents();
+                })
+                .catch(function(error) {
+                    $scope.message =
+                        error.data || "Update Failed";
+                    console.log(error);
+                });
+
+            };
+
+            // Delete Student
+            $scope.deleteStudent = function(id) {
+
+                $http.delete("/students/" + id)
+                .then(function(response) {
+                    $scope.message = response.data;
+                    loadStudents();
+                })
+                .catch(function(error) {
+                    $scope.message =
+                        error.data || "Delete Failed";
+                });
+
+            };
+
+        });
+
+        // Custom Filter
+        app.filter("studentFilter", function() {
+
+            return function(students, searchName) {
+
+                if (!students) {
+                    return [];
+                }
+
+                if (!searchName) {
+                    return students;
+                }
+
+                var result = [];
+
+                angular.forEach(students, function(s) {
+
+                    if (s.name &&
+                        s.name.toLowerCase().includes(
+                            searchName.toLowerCase()
+                        )) {
+                        result.push(s);
+                    }
+
+                });
+
+                return result;
+            };
+
+        });
+
+        // Custom Directive: studentModule
+        app.directive("studentModule", function() {
+
+            return {
+                restrict: "A",
+                template: "<b>Student Management Records</b>"
+            };
+
+        });
+    </script>
+
+</body>
+</html>
+
+style.css
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+}
+
+h2 {
+    color: blue;
+}
+
+input {
+    padding: 8px;
+    margin: 5px;
+}
+
+button {
+    padding: 8px 15px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
+    width: 80%;
+    background: white;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+}
+
+th {
+    background: lightblue;
+}
+
+.box {
+    width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+
+students.dtd
+
+<!ELEMENT students (student+)>
+<!ELEMENT student (id, name, department)>
+<!ELEMENT id (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT department (#PCDATA)>
+
+students.xml
+
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="students.xsl"?>
+<!DOCTYPE students SYSTEM "students.dtd">
+
+<students>
+    <student>
+        <id>101</id>
+        <name>Arun</name>
+        <department>CSE</department>
+    </student>
+    <student>
+        <id>102</id>
+        <name>Priya</name>
+        <department>IT</department>
+    </student>
+</students>
+
+students.xsl
+
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:output method="html" indent="yes"/>
+
+<xsl:template match="/">
+<html>
+<head>
+    <title>Student List</title>
+</head>
+<body>
+    <h2>Student Details</h2>
+
+    <table border="1" cellpadding="10">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+        </tr>
+
+        <xsl:for-each select="students/student">
+            <tr>
+                <td><xsl:value-of select="id"/></td>
+                <td><xsl:value-of select="name"/></td>
+                <td><xsl:value-of select="department"/></td>
+            </tr>
+        </xsl:for-each>
+
+    </table>
+</body>
+</html>
+</xsl:template>
+
+</xsl:stylesheet>
+  
+
+python valid.py (python -m pip install lxml)
+
+from lxml import etree
+try:
+    parser = etree.XMLParser(dtd_validation=True)
+    tree = etree.parse("students.xml", parser)
+
+    print("XML is valid!")
+    print(etree.tostring(tree, pretty_print=True).decode())
+
+except etree.XMLSyntaxError as e:
+    print("XML validation failed!")
+    print(e)
+
+Selenium testing
+
+login.html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Page</title>
+</head>
+<body>
+    <h2>Login</h2>
+
+    <input type="text" id="username"
+           placeholder="Username"><br><br>
+
+    <input type="password" id="password"
+           placeholder="Password"><br><br>
+
+    <button id="login" onclick="loginUser()">
+        Login
+    </button>
+
+    <p id="message"></p>
+
+    <script>
+        function loginUser() {
+            var u = document.getElementById("username").value;
+            var p = document.getElementById("password").value;
+
+            if (u == "admin" && p == "admin123") {
+                document.getElementById("message").innerHTML =
+                    "Welcome Admin";
+            } else {
+                document.getElementById("message").innerHTML =
+                    "Invalid username or password";
+            }
+        }
+    </script>
+</body>
+</html>
+
+python test.py
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+
+driver = webdriver.Chrome()
+
+driver.get("http://localhost:8000/login.html")
+
+# Enter username
+driver.find_element(By.ID, "username").send_keys("admin")
+
+# Enter password
+driver.find_element(By.ID, "password").send_keys("admin123")
+
+# Click login button
+driver.find_element(By.ID, "login").click()
+
+time.sleep(2)
+
+# Check login result
+assert "Welcome" in driver.find_element(
+    By.TAG_NAME, "body"
+).text
+
+print("Login test passed")
+
+driver.quit()
+
+pip install selenium
+run: python -m http.server 8000
+new tab: python test.py
