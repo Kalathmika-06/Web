@@ -1,0 +1,946 @@
+Ex 2 Postman
+Download postman from google directly
+node -v
+npm -v
+mkdir RestAPI
+cd RestAPI
+npm init -y
+npm install express
+
+server.js
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+app.use(express.static(__dirname));
+let students = [
+    { id: 1, name: "Arun" },
+    { id: 2, name: "Priya" }
+];
+
+// GET: Read all students
+app.get("/students", (req, res) => {
+    res.json(students);
+});
+
+// GET: Read one student
+app.get("/students/:id", (req, res) => {
+    const student = students.find(s => s.id == req.params.id);
+    res.json(student || { message: "Student not found" });
+});
+
+// POST: Add a student
+app.post("/students", (req, res) => {
+    students.push(req.body);
+    res.json({ message: "Student added", students });
+});
+
+// PUT: Update a student
+app.put("/students/:id", (req, res) => {
+    const student = students.find(s => s.id == req.params.id);
+
+    if (student) {
+        student.name = req.body.name;
+        res.json({ message: "Student updated", student });
+    } else {
+        res.json({ message: "Student not found" });
+    }
+});
+
+// DELETE: Delete a student
+app.delete("/students/:id", (req, res) => {
+    students = students.filter(s => s.id != req.params.id);
+    res.json({ message: "Student deleted", students });
+});
+
+app.listen(3000, () => {
+    console.log("Server running at http://localhost:3000");
+});
+
+index.html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background: linear-gradient(#dbeafe, #ede9fe);
+            padding: 30px;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        li {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Student Management System</h2>
+
+    <input type="number" id="id" placeholder="Student ID">
+    <input type="text" id="name" placeholder="Student Name">
+
+    <br>
+    <button onclick="addStudent()">Add Student</button>
+    <button onclick="updateStudent()">Update Student</button>
+    <button onclick="getStudents()">View Students</button>
+    <button onclick="deleteStudent()">Delete Student</button>
+
+    <h3>Student List</h3>
+    <ul id="list"></ul>
+
+    <script>
+        const url = "http://localhost:3000/students";
+
+        async function getStudents() {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            document.getElementById("list").innerHTML =
+                data.map(s => `<li>${s.id} - ${s.name}</li>`).join("");
+        }
+
+        async function addStudent() {
+            const student = {
+                id: Number(document.getElementById("id").value),
+                name: document.getElementById("name").value
+            };
+
+            await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(student)
+            });
+
+            getStudents();
+        }
+
+        async function updateStudent() {
+            const id = document.getElementById("id").value;
+            const name = document.getElementById("name").value;
+
+            await fetch(url + "/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({name: name})
+            });
+
+            getStudents();
+        }
+
+        async function deleteStudent() {
+            const id = document.getElementById("id").value;
+
+            await fetch(url + "/" + id, {
+                method: "DELETE"
+            });
+
+            getStudents();
+        }
+
+        getStudents();
+    </script>
+
+</body>
+</html>
+
+node server.js
+Open: http://localhost:3000
+
+Get(retrieve): http://localhost:3000/students
+Post(add): http://localhost:3000/students
+Body:{
+    "id":10,
+    "name": "Random"
+}
+Put(update): http://localhost:3000/students/3
+bode:{ "name":"Changed"};
+Delete: http://localhost/students/3(id)
+
+
+
+Ex 3 firebase
+
+Add domain:localhost, 127.0.0.1
+Rules:
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /patients/{patientId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+
+node -v
+npm -v
+npm install -g firbase-tools
+firebase --version
+firebase login
+cd %USERPROFILE%\Desktop
+mkdir MedicalRecordApp
+cd MedicalRecordApp
+npm init -y
+npm install firebase
+mkdir public
+notepad public\index.html
+npm install -g http-server
+http-server public -p 3000 -a 127.0.0.1
+Open:http://127.0.0.1:3000/
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Medical Record Management</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #eaf2ff;
+      margin: 30px;
+    }
+    .box {
+      max-width: 650px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #3949ab;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #records {
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h2>Medical Record Form</h2>
+
+  <button id="login">Sign in with Google</button>
+  <p id="status">Please sign in first.</p>
+
+  <form id="patientForm">
+    <input id="name" placeholder="Patient Name" required>
+    <input id="age" type="number" placeholder="Age" required>
+    <input id="disease" placeholder="Disease / Diagnosis" required>
+    <button type="submit">Save Patient Record</button>
+  </form>
+
+  <h3>Saved Patient Records</h3>
+  <button id="view">View Records</button>
+  <div id="records"></div>
+</div>
+
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
+
+// Replace these values with your Firebase web app configuration.
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  appId: ""
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let user = null;
+
+document.getElementById("login").onclick = async () => {
+  try {
+    const result = await signInWithPopup(
+      auth, new GoogleAuthProvider()
+    );
+    user = result.user;
+    document.getElementById("status").textContent =
+      "Signed in: " + user.email;
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+document.getElementById("patientForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  if (!user) {
+    alert("Please sign in first.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "patients"), {
+      name: document.getElementById("name").value,
+      age: Number(document.getElementById("age").value),
+      disease: document.getElementById("disease").value,
+      userId: user.uid,
+      createdAt: new Date().toISOString()
+    });
+
+    alert("Patient record saved successfully!");
+    e.target.reset();
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+document.getElementById("view").onclick = async () => {
+  if (!user) {
+    alert("Please sign in first.");
+    return;
+  }
+
+  try {
+    const snapshot = await getDocs(collection(db, "patients"));
+    const output = document.getElementById("records");
+    output.replaceChildren();
+
+    snapshot.forEach((doc) => {
+      const p = doc.data();
+
+      if (p.userId === user.uid) {
+        const item = document.createElement("p");
+        item.textContent =
+          p.name + " | Age: " + p.age +
+          " | Diagnosis: " + p.disease;
+        output.appendChild(item);
+      }
+    });
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+document.getElementById("upload").onclick = async () => {
+  const file = document.getElementById("report").files[0];
+
+  if (!user || !file) {
+    alert("Sign in and select a file first.");
+    return;
+  }
+
+  try {
+    const fileRef = ref(
+      storage, "reports/" + user.uid + "/" + Date.now() + "_" + file.name
+    );
+    await uploadBytes(fileRef, file);
+    alert("Report uploaded successfully!");
+  } catch (error) {
+    alert(error.message);
+  }
+};
+</script>
+</body>
+</html>
+
+Ex 4 dropbox
+
+pip install dropbox
+python upload.py
+
+import dropbox
+
+TOKEN = ""
+
+dbx = dropbox.Dropbox(TOKEN)
+
+with open("test.txt", "rb") as f:
+    dbx.files_upload(f.read(), "/test.txt")
+
+print("File uploaded successfully")
+
+Ex 5 Database as a service MongoDB atlass
+
+server.js
+const express = require("express");
+const { MongoClient, ObjectId } = require("mongodb");
+
+const app = express();
+
+app.use(express.json());
+app.use(express.static(__dirname));
+
+// MongoDB Atlas connection
+const uri = "mongodb+srv://admin:admin123@cluster0.xtg13mc.mongodb.net/?retryWrites=true&w=majority";
+
+const client = new MongoClient(uri);
+
+let students;
+
+// Connect to MongoDB Atlas
+async function start() {
+    await client.connect();
+
+    const db = client.db("StudentDB");
+    students = db.collection("students");
+
+    console.log("Connected to MongoDB Atlas");
+
+    // Add student
+    app.post("/students", async (req, res) => {
+        try {
+            const student = {
+                id: Number(req.body.id),
+                name: req.body.name,
+                department: req.body.department
+            };
+
+            if (
+                !Number.isInteger(student.id) ||
+                student.id <= 0 ||
+                !student.name ||
+                !student.department
+            ) {
+                return res.status(400).send("Enter valid student details");
+            }
+
+            // Prevent duplicate student IDs
+            const existing = await students.findOne({ id: student.id });
+
+            if (existing) {
+                return res.status(409).send("Student ID already exists");
+            }
+
+            await students.insertOne(student);
+            res.send("Student added successfully");
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("Error adding student");
+        }
+    });
+
+    // View all students
+    app.get("/students", async (req, res) => {
+        try {
+            const data = await students.find().toArray();
+            res.json(data);
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("Error retrieving students");
+        }
+    });
+
+    // Delete student using MongoDB document ID
+    app.delete("/students/:id", async (req, res) => {
+        try {
+            if (!ObjectId.isValid(req.params.id)) {
+                return res.status(400).send("Invalid student record ID");
+            }
+
+            const result = await students.deleteOne({
+                _id: new ObjectId(req.params.id)
+            });
+
+            if (result.deletedCount === 1) {
+                res.send("Student deleted successfully");
+            } else {
+                res.status(404).send("Student not found");
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(500).send("Error deleting student");
+        }
+    });
+
+    // Start server after database connection
+    app.listen(3000, () => {
+        console.log("Server running at http://localhost:3000");
+    });
+}
+
+start().catch(error => {
+    console.error("MongoDB connection failed:", error.message);
+});
+
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management System</title>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2>Student Management System</h2>
+        <p>Database as a Service using MongoDB Atlas</p>
+
+        <form id="studentForm">
+
+            <input
+                id="id"
+                type="number"
+                placeholder="Student ID"
+                min="1"
+                required
+            >
+            <br>
+
+            <input
+                id="name"
+                type="text"
+                placeholder="Student Name"
+                required
+            >
+            <br>
+
+            <input
+                id="department"
+                type="text"
+                placeholder="Department"
+                required
+            >
+            <br>
+
+            <button type="submit">Add Student</button>
+
+        </form>
+
+        <p id="message"></p>
+
+        <button type="button" onclick="loadStudents()">
+            View Students
+        </button>
+
+        <ul id="list"></ul>
+    </div>
+
+    <script>
+        const form = document.getElementById("studentForm");
+        const message = document.getElementById("message");
+
+        // Add student
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            try {
+                const response = await fetch("/students", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: document.getElementById("id").value,
+                        name: document.getElementById("name").value,
+                        department: document.getElementById("department").value
+                    })
+                });
+
+                message.textContent = await response.text();
+
+                if (response.ok) {
+                    form.reset();
+                    loadStudents();
+                }
+            } catch (error) {
+                message.textContent = "Could not connect to server";
+            }
+        });
+
+        // View students
+        async function loadStudents() {
+            try {
+                const response = await fetch("/students");
+
+                if (!response.ok) {
+                    throw new Error("Failed to load students");
+                }
+
+                const data = await response.json();
+                const list = document.getElementById("list");
+
+                list.replaceChildren();
+
+                if (data.length === 0) {
+                    const item = document.createElement("li");
+                    item.textContent = "No students found";
+                    list.appendChild(item);
+                }
+
+                data.forEach(function(s) {
+                    const item = document.createElement("li");
+
+                    item.appendChild(document.createTextNode(
+                        "ID: " + s.id +
+                        " | " + s.name +
+                        " | " + s.department + " "
+                    ));
+
+                    // Delete button
+                    const btn = document.createElement("button");
+                    btn.textContent = "Delete";
+                    btn.className = "delete";
+
+                    btn.onclick = async function() {
+                        try {
+                            const result = await fetch(
+                                "/students/" + s._id,
+                                { method: "DELETE" }
+                            );
+
+                            message.textContent = await result.text();
+
+                            if (result.ok) {
+                                loadStudents();
+                            }
+                        } catch (error) {
+                            message.textContent = "Could not delete student";
+                        }
+                    };
+
+                    item.appendChild(btn);
+                    list.appendChild(item);
+                });
+
+            } catch (error) {
+                message.textContent = "Could not load students";
+            }
+        }
+    </script>
+
+</body>
+</html>
+
+
+Ex 6 AuthO
+npm install
+npm install @auth0/auth0-react
+change code in src/main.jsx and src/app.jsx
+app.jsx
+import { useAuth0 } from "@auth0/auth0-react";
+
+function App() {
+  const {
+    isLoading, // Loading state, the SDK needs to reach Auth0 on load
+    isAuthenticated,
+    error,
+    loginWithRedirect: login, // Starts the login flow
+    logout: auth0Logout, // Starts the logout flow
+    user, // User profile
+  } = useAuth0();
+
+  const signup = () =>
+    login({ authorizationParams: { screen_hint: "signup" } });
+
+  const logout = () =>
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+
+  if (isLoading) return "Loading...";
+
+  return isAuthenticated ? (
+    <>
+      <p>Logged in as {user.email}</p>
+
+      <h1>User Profile</h1>
+
+      <pre>{JSON.stringify(user, null, 2)}</pre>
+
+      <button onClick={logout}>Logout</button>
+    </>
+  ) : (
+    <>
+      {error && <p>Error: {error.message}</p>}
+
+      <button onClick={signup}>Signup</button>
+
+      <button onClick={login}>Login</button>
+    </>
+  );
+}
+
+export default App;
+
+main.jsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.jsx";
+import { Auth0Provider } from "@auth0/auth0-react";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <Auth0Provider
+      domain="dev-cwzdctds03oeambq.us.auth0.com"
+      clientId="x0z99WlCbcFhnW5jRWjNQuLpdyLfwTMd"
+      authorizationParams={{ redirect_uri: window.location.origin }}
+    >
+      <App />
+    </Auth0Provider>
+  </StrictMode>,
+);
+
+Run: npm run dev
+
+Spark
+sudo apt update
+sudo apt install openjdk-11-jdk
+java -version
+
+sudo apt install scala python3-pip -y
+scala -version
+
+cd ~/Downloads
+wget https://archive.apache.org/dist/spark/spark-3.5.7/spark-3.5.7-bin-hadoop3.tgz
+tar -xzf spark-3.5.7-bin-hadoop3.tgz
+sudo mv spark-3.5.7-bin-hadoop3 /opt/spark
+
+echo 'export SPARK_HOME=/opt/spark' >> ~/.bashrc
+echo 'export PATH=$PATH:$SPARK_HOME/bin' >> ~/.bashrc
+echo 'export JAVA_HOME=$(dirname $(dirname %(readlink -f $(which java))))' >> ~/.bashrc
+source ~/.bashrc
+spark-shell --version
+cd ~
+echo "spark is fast spark is useful" > input.txt
+echo "big data processing using spark" >> input.txt
+cat input.txt
+
+spark-shell --master "local[2]"
+val inputfile = sc.textFile("file:///home/vboxuser/input.txt")
+val counts = inputfile.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _)
+counts.collect().foreach(println)
+counts.saveAsTextFile("file:///home/vboxuser/output")
+:quit
+cat ~/output/part-*
+
+
+MPI and OpenMPI
+sudo apt update
+sudo apt install -y python3 python3-pip
+sudo apt install -y mpich
+mpiexec --version
+python3 --version
+sudo apt install -y python3-mpi4py
+python3 -c "from mpi4py import MPI; print(MPI.Get_library_version())"
+
+nano summpi.c
+mpicc mpi_sum.c -o mpi_sum
+mpirun -np 4 ./mpi_sum
+
+Openmp
+sudo apt install -y build-essential
+gcc -fopenmp omp_sum.c -o omp_sum
+./omp_sum
+
+
+CloudSim
+
+package org.cloudbus.cloudsim.examples;
+
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.provisioners.*;
+import java.util.*;
+
+public class ExamFCFS {
+
+    public static void main(String[] args) {
+
+        CloudSim.init(1, Calendar.getInstance(), false);
+
+        createDatacenter("Datacenter_0");
+        DatacenterBroker broker = createBroker();
+        int brokerId = broker.getId();
+
+        // Create 4 VMs
+        List<Vm> vmList = new ArrayList<>();
+        int vmCount = 4;
+
+        for (int i = 0; i < vmCount; i++) {
+            vmList.add(new Vm(i, brokerId, 1000, 1, 1024,
+                    1000, 10000, "Xen",
+                    new CloudletSchedulerTimeShared()));
+        }
+        broker.submitVmList(vmList);
+
+        // Create 8 Cloudlets and assign in order
+        List<Cloudlet> cloudletList = new ArrayList<>();
+        int cloudletCount = 8;
+
+        for (int i = 0; i < cloudletCount; i++) {
+            Cloudlet cl = new Cloudlet(i, 40000, 1, 300, 300,
+                    new UtilizationModelFull(),
+                    new UtilizationModelFull(),
+                    new UtilizationModelFull());
+
+            cl.setUserId(brokerId);
+
+            // FCFS-style sequential VM assignment
+            int vmId = i / (cloudletCount / vmCount);
+         // ROUND ROBIN RESOURCE ALLOCATION
+            int vmId = i % vmCount;
+            cl.setVmId(vmId);
+
+            System.out.println("Cloudlet " + i +
+                    " assigned to VM " + vmId);
+
+            cloudletList.add(cl);
+        }
+
+        broker.submitCloudletList(cloudletList);
+
+        CloudSim.startSimulation();
+        CloudSim.stopSimulation();
+
+        // Display results
+        for (Cloudlet cl : broker.getCloudletReceivedList()) {
+            System.out.println("Cloudlet " + cl.getCloudletId()
+                    + " Status: " + cl.getStatus()
+                    + " VM: " + cl.getVmId());
+        }
+    }
+
+    private static Datacenter createDatacenter(String name) {
+        List<Host> hosts = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            List<Pe> pes = new ArrayList<>();
+            pes.add(new Pe(0, new PeProvisionerSimple(1000)));
+
+            hosts.add(new Host(i,
+                    new RamProvisionerSimple(2048),
+                    new BwProvisionerSimple(10000),
+                    1000000, pes,
+                    new VmSchedulerTimeShared(pes)));
+        }
+
+        DatacenterCharacteristics ch =
+                new DatacenterCharacteristics("x86", "Linux", "Xen",
+                        hosts, 10.0, 3.0, 0.05, 0.001, 0.0);
+
+        try {
+            return new Datacenter(name, ch,
+                    new VmAllocationPolicySimple(hosts),
+                    new LinkedList<Storage>(), 0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static DatacenterBroker createBroker() {
+        try {
+            return new DatacenterBroker("Broker");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+
+Hadoop
+
+sudo apt update
+sudo apt install openjdk-11-jdk ssh rsync -y
+java -version
+readlink -f $(which java)
+sudo systemctl enable --now ssh
+ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+ssh localhost
+cd ~
+wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
+tar -xzf hadoop-3.3.6.tar.gz
+sudo mv hadoop-3.3.6 /usr/local/Hadoop
+ls /usr/local/Hadoop
+nano ~/.bashrc
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export HADOOP_HOME=/usr/local/hadoop
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+source ~/.bashrc
+hadoop version
+
+nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+nano $HADOOP_HOME/etc/hadoop/core-site.xml
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+</configuration>
+
+nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+</configuration>
+
+nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+
+nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
+        <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+    </property>
+</configuration>
+
+hdfs namenode -format
+start-dfs.sh
+jps
+
+nano input.txt
+cat input.txt
+hdfs dfs -mkdir -p /user/$USER/input
+hdfs dfs -put input.txt /user/$USER/input/
+hdfs dfs -ls /user/$USER/input
+hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.6.jar wordcount /user/$USER/input /user/$USER/output
+hdfs dfs -cat /user/$USER/output/part-r-00000
+stop-dfs.sh
