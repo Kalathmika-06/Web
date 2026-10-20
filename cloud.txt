@@ -762,6 +762,46 @@ sudo apt install -y build-essential
 gcc -fopenmp omp_sum.c -o omp_sum
 ./omp_sum
 
+MPI
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char *argv[]) {
+    int rank, size;
+    int a[4] = {10, 20, 30, 40};
+    int local, sum;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    local = a[rank];
+
+    MPI_Reduce(&local, &sum, 1, MPI_INT,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0)
+        printf("Average = %.2f\n", (float)sum / size);
+
+    MPI_Finalize();
+    return 0;
+}
+
+OpenMp
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+    int i;
+
+    #pragma omp parallel for
+    for (i = 0; i < 4; i++) {
+        // Calculation here
+    }
+
+    return 0;
+}
 
 CloudSim
 
